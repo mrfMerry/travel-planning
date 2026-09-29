@@ -150,7 +150,7 @@ def provider_capabilities() -> dict[str, dict[str, Any]]:
             "pinned_version": spec.version,
             "products": list(spec.products),
             "source_url": spec.source_url,
-            "skill": "$flyai" if provider_id == "fliggy_flyai" else "$variflight",
+            "skill": "/flyai" if provider_id == "fliggy_flyai" else "/variflight",
         }
     return result
 

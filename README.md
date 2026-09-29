@@ -1,6 +1,8 @@
+基于 https://github.com/mater1996/travel-planning 修改
+
 # Travel Planning Plugin
 
-面向 Codex 的旅行研究与行程交付插件。它会先比较路线并让用户确认，再按需查询地图、交通、住宿、天气和社区体验，最后生成带来源的 `itinerary.json` 与可独立打开的响应式 `itinerary.html`。
+面向 Grok 的旅行研究与行程交付插件。它会先比较路线并让用户确认，再按需查询地图、交通、住宿、天气和社区体验，最后生成带来源的 `itinerary.json` 与可独立打开的响应式 `itinerary.html`。
 
 ## 在线 Demo
 
@@ -10,7 +12,7 @@ Demo 用于展示插件的页面交付形态，其中的开放时间、价格、
 
 插件不会代订、占座、付款、发送消息或修改订单。价格、余票、库存、开放时间和天气等动态信息只表示查询时点的快照，最终下单前仍需回到官方或供应商页面确认。
 
-当前已验证的安装主路径是 Codex 本地 marketplace。仓库同时保留 Claude Code 与通用宿主所需的清单，方便后续适配，但不把它们表述成已经验收的一键安装流程。
+当前安装主路径是 Grok 本地 marketplace。插件目录仍保留一份 Claude 兼容清单，方便 Grok 按同一套组件目录发现 Skill 和 MCP。
 
 ## 能力概览
 
@@ -25,13 +27,13 @@ Demo 用于展示插件的页面交付形态，其中的开放时间、价格、
 
 插件统一的是安装、能力发现、权限边界和旅行编排。各数据源仍使用最合适的官方 CLI、MCP 或公开 API，并不会为了形式统一而重写成同一种协议。
 
-## 快速接入 Codex
+## 快速接入 Grok
 
 ### 1. 准备运行环境
 
 请先准备：
 
-- 支持 `codex plugin` 命令的 Codex CLI
+- 支持 `grok plugin` 命令的 Grok CLI
 - Python 3.10 或更高版本
 - Node.js 22.14.0 或更高版本，并确保 `npm`、`npx` 可用
 - 一个不会被临时清理的仓库目录或解压目录
@@ -40,23 +42,26 @@ Node.js 22.14.0 覆盖了高德、飞猪和飞常准三个 Node Provider 的运�
 
 ### 2. 注册 marketplace 并安装插件
 
-拿到本仓库或发布包并进入它的根目录。该目录下应同时存在 `.agents/plugins/marketplace.json` 和 `plugins/travel-planning/`。
+拿到本仓库或发布包并进入它的根目录。该目录下应同时存在 `.grok-plugin/marketplace.json` 和 `plugins/travel-planning/`。
 
 ```bash
 cd /absolute/path/to/travel-planning
-codex plugin marketplace add "$PWD" --json
-codex plugin add travel-planning@local --json
+grok plugin marketplace add "$PWD"
+grok plugin install travel-planning --trust
 ```
+
+在本仓库里开发时，`.grok/config.toml` 已把插件目录加入 `[plugins].paths` 并启用。信任该项目文件夹后，Grok 会直接加载这里的 Skill 和 MCP，不必再安装一份副本。
 
 检查安装结果：
 
 ```bash
-codex plugin list
+grok plugin list
+grok plugin validate plugins/travel-planning
 ```
 
-列表中应出现 `travel-planning@local`，状态为 `installed, enabled`。安装或升级后请新建一个 Codex 会话，让新 Skill 与 MCP 配置从干净上下文加载。
+列表中应出现 `travel-planning`。安装或升级后请新建一个 Grok 会话，让新 Skill 与 MCP 配置从干净上下文加载。
 
-如果 `local` marketplace 已经注册，无需重复执行 `marketplace add`。拉取新版仓库或替换发布包后，重新执行 `codex plugin add travel-planning@local --json`，然后新建会话即可。
+如果这个 marketplace 已经注册，无需重复执行 `marketplace add`。拉取新版仓库或替换发布包后，执行 `grok plugin update travel-planning`，然后新建会话即可。
 
 ### 3. 配置需要的数据源
 
@@ -85,7 +90,7 @@ VARIFLIGHT_API_KEY=
 - 飞猪 FlyAI：<https://flyai.open.fliggy.com/console>
 - 飞常准：<https://ai.variflight.com/keys>
 
-如需使用其他文件，可在启动 Codex 前设置 `TRAVEL_SOURCES_CONFIG=/absolute/path/to/sources.local.env`。源码开发时也可使用 `plugins/travel-planning/config/sources.local.env`；该文件已被 Git 忽略，且不会进入安装包。
+如需使用其他文件，可在启动 Grok 前设置 `TRAVEL_SOURCES_CONFIG=/absolute/path/to/sources.local.env`。源码开发时也可使用 `plugins/travel-planning/config/sources.local.env`；该文件已被 Git 忽略，且不会进入安装包。
 
 ### 4. 可选启用小红书
 
@@ -99,7 +104,7 @@ python3 skills/xiaohongshu/scripts/setup.py start
 python3 skills/xiaohongshu/scripts/setup.py status
 ```
 
-`login` 会打开上游登录工具，扫码和账号确认必须由用户本人完成。二进制、Cookie、日志与进程状态保存在 `~/.local/share/travel-planning/xiaohongshu-mcp/`，不会写入插件源码。
+`login` 会打开上游登录工具，扫码和账号确认必须由用户本人完成。`start` 会把上游服务放在 `127.0.0.1:18061`，并在公开地址 `127.0.0.1:18060` 前加一层限流代理：任意 MCP `tools/call` 至少间隔 30 秒。已经直接启动过旧服务时，先 `stop` 再 `start`，否则调用不会经过这层限制。二进制、Cookie、日志与进程状态保存在 `~/.local/share/travel-planning/xiaohongshu-mcp/`，不会写入插件源码。
 
 后续常用命令：
 
@@ -135,18 +140,20 @@ python3 plugins/travel-planning/skills/travel-planning/scripts/research_sources.
 完整行程优先调用主 Skill：
 
 ```text
-使用 $travel-planning 帮我规划 10 月 1 日到 10 月 6 日从北京出发的成都、重庆行程。
+/travel-planning 帮我规划 10 月 1 日到 10 月 6 日从北京出发的成都、重庆行程。
 2 人，预算 12000 元，偏好美食和历史，节奏不要太赶。先给我 2～3 个路线方案，等我确认后再深度调研并生成页面。
 ```
 
 也可以直接调用单一数据源：
 
 ```text
-使用 $amap-maps 比较成都东站到宽窄巷子的地铁和打车路线。
-使用 $flyai 查询指定日期北京到成都的航班候选，只做只读比较。
-使用 $variflight 核验 3U8882 的运行与舒适度信息。
-使用 $xiaohongshu 搜索近期成都早餐体验，不发布、不点赞、不评论。
+/amap-maps 比较成都东站到宽窄巷子的地铁和打车路线。
+/flyai 查询指定日期北京到成都的航班候选，只做只读比较。
+/variflight 核验 3U8882 的运行与舒适度信息。
+/xiaohongshu 搜索近期成都早餐体验，不发布、不点赞、不评论。
 ```
+
+名称与其他 Skill 冲突时，使用插件前缀，例如 `/travel-planning:amap-maps`。
 
 主 Skill 默认先确认路线，再进行深度研究。路线确认后，对已配置来源的只读查询无需逐次授权；登录、验证码、付费凭证、预订、付款和任何外部写操作仍由用户掌控。
 
@@ -178,11 +185,11 @@ python3 plugins/travel-planning/skills/travel-planning/scripts/research_sources.
 
 ```text
 .
-├── .agents/plugins/marketplace.json       # Codex marketplace 入口
-├── .codex/config.toml                     # 当前仓库的开发启用配置
+├── .grok-plugin/marketplace.json          # Grok marketplace 入口
+├── .grok/config.toml                      # 当前仓库的插件启用配置
 ├── plugins/travel-planning/
-│   ├── .codex-plugin/plugin.json          # Codex 插件清单
-│   ├── .claude-plugin/plugin.json         # Claude Code 兼容清单
+│   ├── .grok-plugin/plugin.json           # Grok 插件清单
+│   ├── .claude-plugin/plugin.json         # Claude 兼容清单
 │   ├── plugin.json                        # 可移植清单
 │   ├── .mcp.json                          # MCP Server 声明
 │   ├── config/sources.example.env         # 凭证模板
@@ -201,12 +208,11 @@ python3 plugins/travel-planning/skills/travel-planning/scripts/research_sources.
 
 ```bash
 make frontend
-python3 /absolute/path/to/plugin-creator/scripts/validate_plugin.py \
-  plugins/travel-planning
+grok plugin validate plugins/travel-planning
 (cd plugins/travel-planning && python3 -m unittest discover -s tests -p 'test_*.py')
 ```
 
-`make frontend` 会把兼容转译后的脚本和样式写入 `skills/travel-planning/assets/frontend/`，Python 渲染器再将它们内联进最终页面。若本机没有 `plugin-creator`，至少运行测试，并确认三个插件清单、marketplace 路径和 Skill 名称保持一致。
+`make frontend` 会把兼容转译后的脚本和样式写入 `skills/travel-planning/assets/frontend/`，Python 渲染器再将它们内联进最终页面。确认 `.grok-plugin/marketplace.json`、插件清单和五个 Skill 名称保持一致。
 
 ## 打包与分发
 
@@ -218,12 +224,13 @@ make package
 
 ```text
 travel-planning-marketplace/
-├── .agents/plugins/marketplace.json
+├── .grok-plugin/marketplace.json
+├── .grok/config.toml
 ├── plugins/travel-planning/
 └── README.md
 ```
 
-接收方需要先把 ZIP 解压到持久目录，再按照“快速接入 Codex”中的命令注册该目录并安装 `travel-planning@local`。Codex CLI 接收的是 marketplace 目录，不是 ZIP 文件本身。
+接收方需要先把 ZIP 解压到持久目录，再按照“快速接入 Grok”中的命令注册该目录并安装 `travel-planning`。Grok 接收的是 marketplace 目录，不是 ZIP 文件本身。
 
 打包清单由 Git 规则生成。已跟踪文件和未被忽略的新文件会进入 ZIP；`.gitignore`、`.git/info/exclude` 和全局 Git ignore 命中的文件不会进入产物。因此 `sources.local.env`、研究工作区、浏览器截图和本机缓存不会被分发。
 
@@ -238,13 +245,13 @@ make package \
 
 ## 常见问题
 
-`codex plugin list` 中看不到插件
+`grok plugin list` 中看不到插件
 
-确认执行 `marketplace add` 时传入的是包含 `.agents/plugins/marketplace.json` 的根目录，而不是 `plugins/travel-planning/`。然后重新执行 `codex plugin add travel-planning@local --json`。
+确认执行 `marketplace add` 时传入的是包含 `.grok-plugin/marketplace.json` 的根目录，而不是 `plugins/travel-planning/`。然后重新执行 `grok plugin install travel-planning --trust`。插件默认关闭，需要安装时带 `--trust`，或在插件列表里启用并信任。
 
 插件已安装，但当前会话找不到 Skill 或 MCP
 
-安装或升级后新建 Codex 会话。旧会话不会可靠地重新加载插件能力。
+安装或升级后新建 Grok 会话。旧会话不会可靠地重新加载插件能力。MCP 工具名形如 `amap-maps__maps_geo`，在会话里用 `search_tool` 查找后再调用。
 
 Provider 提示缺少 Key
 

@@ -14,7 +14,7 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PLUGIN_DIR = Path("plugins/travel-planning")
-DEFAULT_MARKETPLACE_FILE = Path(".agents/plugins/marketplace.json")
+DEFAULT_MARKETPLACE_FILE = Path(".grok-plugin/marketplace.json")
 DEFAULT_OUTPUT = Path("output/travel-planning-marketplace.zip")
 DEFAULT_BUNDLE_NAME = "travel-planning-marketplace"
 
@@ -50,7 +50,13 @@ def repository_relative(path: Path, argument_name: str) -> Path:
 
 
 def package_files(plugin_dir: Path) -> list[Path]:
-    included_paths = [Path("README.md"), Path("LICENSE"), DEFAULT_MARKETPLACE_FILE, plugin_dir]
+    included_paths = [
+        Path("README.md"),
+        Path("LICENSE"),
+        Path(".grok/config.toml"),
+        DEFAULT_MARKETPLACE_FILE,
+        plugin_dir,
+    ]
     result = subprocess.run(
         [
             "git",
@@ -87,8 +93,8 @@ def build_archive(plugin_dir: Path, output: Path, bundle_name: str) -> int:
     source_root = REPOSITORY_ROOT / plugin_dir
     if not source_root.is_dir():
         raise SystemExit(f"plugin directory does not exist: {source_root}")
-    if not (source_root / ".codex-plugin/plugin.json").is_file():
-        raise SystemExit(f"missing plugin manifest: {source_root / '.codex-plugin/plugin.json'}")
+    if not (source_root / ".grok-plugin/plugin.json").is_file():
+        raise SystemExit(f"missing plugin manifest: {source_root / '.grok-plugin/plugin.json'}")
     if not (REPOSITORY_ROOT / DEFAULT_MARKETPLACE_FILE).is_file():
         raise SystemExit(
             f"missing marketplace catalog: {REPOSITORY_ROOT / DEFAULT_MARKETPLACE_FILE}"

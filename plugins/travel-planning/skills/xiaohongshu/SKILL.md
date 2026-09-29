@@ -1,11 +1,11 @@
 ---
 name: xiaohongshu
-description: 通过插件固定版本的 xpzouying/xiaohongshu-mcp 使用小红书搜索、笔记详情、用户主页、登录，以及用户明确要求时的发布和互动能力。服务使用独立浏览器，不依赖 Chrome 扩展；旅行研究默认只读。
+description: 通过插件固定版本的 xpzouying/xiaohongshu-mcp 使用小红书搜索、笔记详情、用户主页、登录，以及用户明确要求时的发布和互动能力。服务使用独立浏览器，不依赖 Chrome 扩展；在 Grok 中使用 /xiaohongshu。旅行研究默认只读。
 ---
 
 # 小红书 MCP
 
-本 Skill 路由已注册的 `xiaohongshu-mcp` Streamable HTTP 工具。上游是非官方自动化项目，固定为 `v2.5.0`；它自带独立浏览器，不读取或控制用户的 Chrome。
+本 Skill 路由已注册的 `xiaohongshu-mcp` Streamable HTTP 工具。在 Grok 中用 `search_tool` 与 `use_tool` 调用。上游是非官方自动化项目，固定为 `v2.5.0`；它自带独立浏览器，不读取或控制用户的 Chrome。
 
 ## 首次使用
 
@@ -34,7 +34,7 @@ python3 skills/xiaohongshu/scripts/setup.py start
 3. `publish_content`、`publish_with_video`、评论、回复、点赞、收藏和删除 Cookie 都会改变外部状态，只有用户明确要求对应动作时才调用。
 4. 搜索得到的 `xsec_token` 只在后续详情读取中传递；不得写入旅行 workspace、最终 JSON、HTML、日志或回答。
 5. 只归档公开原帖链接、标题、作者、发布时间、必要摘要和查询时间；不复制整篇笔记、评论全集、未授权图片或临时媒体地址。
-6. 控制请求频率。遇到验证码、设备验证、风控或账号提示立即停止，由用户本人处理，不重试绕过。
+6. 公开端点 `http://127.0.0.1:18060/mcp` 会强制任意 `tools/call` 至少间隔 30 秒；更早的调用在本地代理内等待。不要改连 `127.0.0.1:18061`，不要并发调用，也不要为了绕过等待而重试。遇到验证码、设备验证、风控或账号提示立即停止，由用户本人处理。
 7. 同一小红书账号不要同时登录其他网页端，否则上游保存的登录态可能被挤下线；手机 App 可正常使用。
 
 工具名和参数边界见 `references/tool-routing.md`；版本、发布包校验值和许可证见 `references/upstream.lock.json` 与 `references/NOTICE.md`。

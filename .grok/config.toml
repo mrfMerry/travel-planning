@@ -1,0 +1,3 @@
+[plugins]
+paths = ["plugins/travel-planning"]
+enabled = ["travel-planning"]

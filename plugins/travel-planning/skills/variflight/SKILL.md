@@ -1,6 +1,6 @@
 ---
 name: variflight
-description: 使用插件已配置的飞常准 Aviation 与 Tripmatch MCP 查询航班班次、运行状态、价格、舒适度、机场天气、火车和空铁联运候选。适用于航班号核验、城市或机场间交通查询及铁路候选；不用于代订、出票或替代航司和 12306 的最终确认。
+description: 使用插件已配置的飞常准 Aviation 与 Tripmatch MCP 查询航班班次、运行状态、价格、舒适度、机场天气、火车和空铁联运候选。适用于航班号核验、城市或机场间交通查询及铁路候选，在 Grok 中使用 /variflight；不用于代订、出票或替代航司和 12306 的最终确认。
 ---
 
 # 飞常准 MCP
@@ -32,4 +32,4 @@ description: 使用插件已配置的飞常准 Aviation 与 Tripmatch MCP 查询
 - 价格、余量、班次、运行状态和天气均为查询时快照。中国铁路最终回到 12306，航班关键状态最终回到航司或机场；不得把候选描述成已出票或已预订。
 - 不输出、记录或传递 `VARIFLIGHT_API_KEY`，不执行订单、占座、付款或乘客信息提交。
 
-完整旅行规划中，需要持久化或采用某个候选时，交给 `$travel-planning` 的标准快照适配器写入 `travel-source-snapshot/v1`；本 Skill 的原始 MCP 返回不能直接成为行程层契约。
+完整旅行规划中，需要持久化或采用某个候选时，交给 `/travel-planning` 的标准快照适配器写入 `travel-source-snapshot/v1`；本 Skill 的原始 MCP 返回不能直接成为行程层契约。在 Grok 中用 `search_tool` 与 `use_tool` 调用 `variflight-aviation`、`variflight-tripmatch` 的 MCP 工具。

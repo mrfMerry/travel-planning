@@ -1,6 +1,6 @@
 # 实时数据工具
 
-除“小红书路线前轻量预研”外，只在路线已确认并进入深度规划时读取。这里说明跨来源预检、标准快照落盘和本 Skill 自带的适配命令；供应商工具参数、安装与登录遵循 `$flyai`、`$variflight`、`$amap-maps` 和 `$xiaohongshu`。
+除“小红书路线前轻量预研”外，只在路线已确认并进入深度规划时读取。这里说明跨来源预检、标准快照落盘和本 Skill 自带的适配命令；供应商工具参数、安装与登录遵循 `/flyai`、`/variflight`、`/amap-maps` 和 `/xiaohongshu`。
 
 ## 小红书路线前轻量预研
 
@@ -39,7 +39,7 @@ python3 skills/travel-planning/scripts/research_sources.py preflight \
 
 ## 航班、铁路与住宿
 
-通用发现先使用 `$flyai`，运行状态、指定航班、铁路和空铁联运补充使用 `$variflight`。开放式航班和铁路候选必须覆盖最早、最晚、时长、价格和推荐排序，不能用单次低价榜推断全天没有合适班次。
+通用发现先使用 `/flyai`，运行状态、指定航班、铁路和空铁联运补充使用 `/variflight`。开放式航班和铁路候选必须覆盖最早、最晚、时长、价格和推荐排序，不能用单次低价榜推断全天没有合适班次。
 
 需要写入标准快照时使用包装命令：
 
@@ -72,7 +72,7 @@ python3 skills/travel-planning/scripts/research_sources.py weather \
   --location "杭州" --days 7
 ```
 
-中国境内 POI 与路线遵循 `$amap-maps`。需要包装输出时使用：
+中国境内 POI 与路线遵循 `/amap-maps`。需要包装输出时使用：
 
 ```bash
 python3 skills/travel-planning/scripts/research_sources.py amap-place \
@@ -98,7 +98,7 @@ python3 skills/travel-planning/scripts/research_sources.py osm-place \
 
 ## 小红书体验研究
 
-搜索、详情、登录和工具参数遵循 `$xiaohongshu`。旅行研究默认只读；使用本 Skill 的 `xhs-search` 或 `xhs-detail` 包装输出时，临时令牌只保存在权限受限的用户缓存，workspace 只保存公开原帖链接、必要摘要和查询时间。研究方法与证据边界见[信息获取与核验策略](source-strategy.md)。
+搜索、详情、登录和工具参数遵循 `/xiaohongshu`。旅行研究默认只读；使用本 Skill 的 `xhs-search` 或 `xhs-detail` 包装输出时，临时令牌只保存在权限受限的用户缓存，workspace 只保存公开原帖链接、必要摘要和查询时间。研究方法与证据边界见[信息获取与核验策略](source-strategy.md)。
 
 路线确认后的具体景点和餐厅研究可以复用 `route-context.json` 的查询词与地方美食主题，但必须重新核验具体实体、适用日期、地图位置和经营信息；不得把路线前样本数算作某家餐厅的门店口碑样本。
 

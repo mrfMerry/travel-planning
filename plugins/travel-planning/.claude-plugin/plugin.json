@@ -1,7 +1,7 @@
 {
   "name": "travel-planning",
   "version": "0.1.0",
-  "description": "旅行数据源调研与响应式行程页面生成插件",
+  "description": "面向 Grok 的旅行数据源调研与响应式行程页面生成插件",
   "author": {
     "name": "Travel Planning contributors"
   },

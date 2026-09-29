@@ -3,40 +3,21 @@
     "amap-maps": {
       "command": "python3",
       "args": [
-        "./scripts/providers/amap_mcp.py"
-      ],
-      "cwd": ".",
-      "env_vars": [
-        "AMAP_MAPS_API_KEY",
-        "AMAP_API_KEY",
-        "TRAVEL_SOURCES_CONFIG",
-        "XDG_CONFIG_HOME"
+        "${GROK_PLUGIN_ROOT}/scripts/providers/amap_mcp.py"
       ]
     },
     "variflight-aviation": {
       "command": "python3",
       "args": [
-        "./scripts/providers/variflight_mcp.py",
+        "${GROK_PLUGIN_ROOT}/scripts/providers/variflight_mcp.py",
         "aviation"
-      ],
-      "cwd": ".",
-      "env_vars": [
-        "VARIFLIGHT_API_KEY",
-        "TRAVEL_SOURCES_CONFIG",
-        "XDG_CONFIG_HOME"
       ]
     },
     "variflight-tripmatch": {
       "command": "python3",
       "args": [
-        "./scripts/providers/variflight_mcp.py",
+        "${GROK_PLUGIN_ROOT}/scripts/providers/variflight_mcp.py",
         "tripmatch"
-      ],
-      "cwd": ".",
-      "env_vars": [
-        "VARIFLIGHT_API_KEY",
-        "TRAVEL_SOURCES_CONFIG",
-        "XDG_CONFIG_HOME"
       ]
     },
     "xiaohongshu-mcp": {

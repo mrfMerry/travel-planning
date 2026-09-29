@@ -1,0 +1,19 @@
+{
+  "name": "travel-planning",
+  "description": "Grok 旅行研究与行程页面插件",
+  "owner": {
+    "name": "Travel Planning contributors"
+  },
+  "plugins": [
+    {
+      "name": "travel-planning",
+      "description": "比较路线后查询地图、交通、住宿、天气和社区体验，生成带来源的行程 JSON 与可独立打开的 HTML。",
+      "category": "productivity",
+      "source": {
+        "type": "local",
+        "path": "./plugins/travel-planning"
+      },
+      "keywords": ["旅行", "行程", "travel", "itinerary", "高德", "机票", "火车", "酒店"]
+    }
+  ]
+}

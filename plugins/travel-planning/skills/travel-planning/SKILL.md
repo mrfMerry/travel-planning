@@ -1,6 +1,6 @@
 ---
 name: travel-planning
-description: 调研和规划需要可靠动态信息的旅行，比较路线与交通，生成可执行的逐日行程、结构化 JSON 和响应式 HTML。适用于多日或多城市行程、详细路线研究及可分享页面；不用于代订、付款或修改订单。
+description: 调研和规划需要可靠动态信息的旅行，比较路线与交通，生成可执行的逐日行程、结构化 JSON 和响应式 HTML。适用于多日或多城市行程、详细路线研究及可分享页面；在 Grok 中使用 /travel-planning。不用于代订、付款或修改订单。
 ---
 
 # 旅行规划
@@ -23,7 +23,7 @@ description: 调研和规划需要可靠动态信息的旅行，比较路线与�
 | --- | --- |
 | 研究景点、出入口、内部顺序和交通边 | [景点与路线研究](references/research-workflow.md) |
 | 选择来源、处理冲突或自动查询失败 | [信息获取与核验策略](references/source-strategy.md) |
-| 查询航班、铁路、住宿、地图、天气或小红书 | [实时数据工具](references/live-data-tools.md)；小红书工具操作遵循 `$xiaohongshu` |
+| 查询航班、铁路、住宿、地图、天气或小红书 | [实时数据工具](references/live-data-tools.md)；小红书工具操作遵循 `/xiaohongshu` |
 | 研究正餐候选和双向绕行 | [餐厅候选研究与路线适配](references/restaurant-research.md) |
 | 判断是否拆分、分配任务和检查完成门槛 | [子 Agent 编排](references/agent-orchestration.md) |
 | 创建 workspace、归档来源或提交任务结果 | [行程研究工作区](references/research-workspace.md) |
@@ -41,7 +41,7 @@ python3 skills/travel-planning/scripts/research_sources.py preflight \
 
 预检必须完成 MCP `initialize`、`tools/list`、只读上游探测、天气请求及适用的小红书运行态检查；静态 `capabilities` 结果不能替代。必需来源失败时，先按实时数据工具中的合法 fallback 修复或降级，不得启动依赖该来源的研究任务。
 
-已配置的只读来源在路线确认后可直接查询，不逐次请求同意；路线确认前仅可执行有上限的小红书目的地轻量预研。飞猪通用发现使用 `$flyai`，中国境内地点与路线使用 `$amap-maps`，航班运行、价格、铁路和空铁联运使用 `$variflight`，小红书体验研究使用 `$xiaohongshu`。这项默认不包含安装新工具、配置新付费凭证、下单、占座、付款、发送消息或修改订单。
+已配置的只读来源在路线确认后可直接查询，不逐次请求同意；路线确认前仅可执行有上限的小红书目的地轻量预研。飞猪通用发现使用 `/flyai`，中国境内地点与路线使用 `/amap-maps`，航班运行、价格、铁路和空铁联运使用 `/variflight`，小红书体验研究使用 `/xiaohongshu`。名称与其他 Skill 冲突时改用 `/travel-planning:` 前缀。MCP 工具通过 `search_tool` 发现、`use_tool` 调用。这项默认不包含安装新工具、配置新付费凭证、下单、占座、付款、发送消息或修改订单。
 
 ## 不可违反的约束
 
@@ -58,7 +58,7 @@ python3 skills/travel-planning/scripts/research_sources.py preflight \
 
 对拟采用的景点研究适用日期的开放与预约、入口和出口、游览时段、内部 checkpoints、费用、补给和最晚离开时间。交通按出口到下一入口计算门到门时间，包含步行、等候、换乘、安检、取行李和缓冲；跨住宿夜明确行李去向。先按硬时间和地理方向排程，再比较价格。
 
-协作能力可用且存在两个以上独立研究域时，深度规划必须并行。多城市、超过 3 天、候选景点超过 8 个，或同时涉及铁路/航班/大巴/包车时，按子 Agent 编排执行；路线建议阶段、用户禁止委派、协作槽位不可用或任务存在硬依赖时除外。子 Agent 只提交 assignment 允许的研究结果、来源、快照和证据；主 Agent 负责路线、合并、冲突裁决、最终 JSON 和页面。
+协作能力可用且存在两个以上独立研究域时，深度规划必须并行。多城市、超过 3 天、候选景点超过 8 个，或同时涉及铁路/航班/大巴/包车时，按子 Agent 编排执行；路线建议阶段、用户禁止委派、协作槽位不可用或任务存在硬依赖时除外。在 Grok 中用 `spawn_subagent` 派发，每个 prompt 自包含任务契约。子 Agent 只提交 assignment 允许的研究结果、来源、快照和证据；主 Agent 负责路线、合并、冲突裁决、最终 JSON 和页面。
 
 跨 Agent 复用的数据统一写入本次 `.travel-research/<trip-id>/state/research.json`；不建立跨行程缓存。各任务只写自己的结果、来源和快照，`merge` 重新校验后按实体 ID 汇总 `shared_entities[]`，自动合并互补字段、记录冲突，并汇总事件绑定、约束和未解决项。
 

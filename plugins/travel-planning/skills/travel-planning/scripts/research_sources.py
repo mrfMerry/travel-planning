@@ -641,7 +641,7 @@ def capabilities(_: argparse.Namespace) -> dict[str, Any]:
                     "transport": "官方 stdio MCP + Web 服务 API",
                     "mcp_server": "amap-maps",
                     "mcp_package": "@amap/amap-maps-mcp-server@0.0.8",
-                    "skill": "$amap-maps",
+                    "skill": "/amap-maps",
                 },
                 {"name": "Nominatim / OpenStreetMap", "available": True, "scope": "境外地点与入口候选检索", "credential_required": False},
             ],
@@ -677,7 +677,7 @@ def capabilities(_: argparse.Namespace) -> dict[str, Any]:
             "consent_required_per_query": False,
             "query_policy": "已配置的只读供应商查询在深度规划中直接执行，不逐次请求用户确认",
             "boundary": "只读查询；不提交订单、不占座、不付款；价格、库存和运行状态需在下单前复核",
-            "generic_flyai_skill": "$flyai（航班、火车、酒店、景点、活动和旅行产品）",
+            "generic_flyai_skill": "/flyai（航班、火车、酒店、景点、活动和旅行产品）",
         },
         "xiaohongshu": {
             "adapter_available": True,

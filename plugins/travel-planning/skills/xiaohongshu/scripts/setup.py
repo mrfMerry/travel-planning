@@ -9,6 +9,7 @@ import json
 import os
 import platform
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -22,14 +23,23 @@ UPSTREAM_REPOSITORY = "https://github.com/xpzouying/xiaohongshu-mcp"
 UPSTREAM_VERSION = "v2.5.0"
 UPSTREAM_COMMIT = "6583124dfda92312b6bc19a042a6acfae63fe498"
 RELEASE_BASE_URL = f"{UPSTREAM_REPOSITORY}/releases/download/{UPSTREAM_VERSION}"
-DEFAULT_ENDPOINT = "http://127.0.0.1:18060"
+PUBLIC_HOST = "127.0.0.1"
+PUBLIC_PORT = 18060
+UPSTREAM_HOST = "127.0.0.1"
+UPSTREAM_PORT = 18061
+DEFAULT_ENDPOINT = f"http://{PUBLIC_HOST}:{PUBLIC_PORT}"
+UPSTREAM_ENDPOINT = f"http://{UPSTREAM_HOST}:{UPSTREAM_PORT}"
+RATE_LIMIT_INTERVAL_SECONDS = 30
 DEFAULT_DATA_ROOT = Path.home() / ".local" / "share" / "travel-planning" / "xiaohongshu-mcp"
 DATA_ROOT = Path(os.environ.get("TRAVEL_XHS_MCP_HOME", DEFAULT_DATA_ROOT)).expanduser().resolve()
 RELEASE_DIR = DATA_ROOT / "releases" / UPSTREAM_VERSION
 STATE_DIR = DATA_ROOT / "state"
 COOKIE_FILE = STATE_DIR / "cookies.json"
 PID_FILE = STATE_DIR / "service.pid"
+PROXY_PID_FILE = STATE_DIR / "rate-limit.pid"
+RATE_LIMIT_STATE = STATE_DIR / "rate-limit.json"
 LOG_FILE = STATE_DIR / "service.log"
+PROXY_SCRIPT = Path(__file__).with_name("xhs_rate_limit.py")
 
 ASSETS = {
     ("Darwin", "arm64"): {
@@ -147,7 +157,7 @@ def _secure_state_files() -> None:
         STATE_DIR.chmod(0o700)
     except OSError:
         pass
-    for path in (COOKIE_FILE, PID_FILE, LOG_FILE):
+    for path in (COOKIE_FILE, PID_FILE, PROXY_PID_FILE, RATE_LIMIT_STATE, LOG_FILE):
         if path.is_file():
             try:
                 path.chmod(0o600)
@@ -175,78 +185,172 @@ def install(_: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _read_proxy_pid() -> int | None:
+    try:
+        return int(PROXY_PID_FILE.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _port_open(port: int, host: str = PUBLIC_HOST) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+def _proxy_active() -> bool:
+    try:
+        with urlopen(f"{DEFAULT_ENDPOINT}/travel-planning-rate-limit", timeout=2) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        return False
+    return payload.get("enabled") is True and payload.get("interval_seconds") == RATE_LIMIT_INTERVAL_SECONDS
+
+
 def status(_: argparse.Namespace) -> dict[str, Any]:
     _secure_state_files()
     pid = _read_pid()
+    proxy_pid = _read_proxy_pid()
     server_verified = _verify_binary("server")
     login_verified = _verify_binary("login")
     healthy = _health()
+    proxy_active = _proxy_active()
     return {
-        "status": "ready" if healthy else ("installed" if server_verified and login_verified else "not_installed"),
+        "status": "ready" if healthy and proxy_active else ("installed" if server_verified and login_verified else "not_installed"),
         "provider": "xpzouying/xiaohongshu-mcp",
         "version": UPSTREAM_VERSION,
         "commit": UPSTREAM_COMMIT,
         "assets_verified": {"server": server_verified, "login": login_verified},
         "service": {
-            "healthy": healthy,
+            "healthy": healthy and proxy_active,
             "managed_pid": pid,
             "managed_process_alive": _process_alive(pid),
+            "proxy_pid": proxy_pid,
+            "proxy_process_alive": _process_alive(proxy_pid),
             "endpoint": f"{DEFAULT_ENDPOINT}/mcp",
+            "upstream_endpoint": f"{UPSTREAM_ENDPOINT}/mcp",
+        },
+        "rate_limit": {
+            "enabled": proxy_active,
+            "interval_seconds": RATE_LIMIT_INTERVAL_SECONDS,
+            "applies_to": "tools/call",
         },
         "cookie_file_present": COOKIE_FILE.is_file(),
         "data_root": str(DATA_ROOT),
     }
 
 
+def _wait_until(predicate: Any, timeout: float, process: subprocess.Popen[bytes] | None = None) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        if process is not None and process.poll() is not None:
+            return False
+        time.sleep(0.5)
+    return False
+
+
+def _log_tail() -> str:
+    try:
+        return "\n".join(LOG_FILE.read_text(encoding="utf-8", errors="replace").splitlines()[-20:])
+    except OSError:
+        return ""
+
+
+def _spawn(command: list[str], environment: dict[str, str], log: Any) -> subprocess.Popen[bytes]:
+    return subprocess.Popen(
+        command,
+        cwd=STATE_DIR,
+        env=environment,
+        stdin=subprocess.DEVNULL,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+
 def start(args: argparse.Namespace) -> dict[str, Any]:
     if not _verify_binary("server"):
         raise SetupError("尚未安装或发布包校验失败；先运行 setup.py install")
-    if _health():
+    if _proxy_active() and _health(UPSTREAM_ENDPOINT):
         return status(args)
+    if _port_open(PUBLIC_PORT) and not _proxy_active():
+        raise SetupError(
+            "127.0.0.1:18060 上仍是未限流的小红书服务。请先运行 setup.py stop，再 start，公开端口才会强制 tools/call 间隔 30 秒。"
+        )
+    if _port_open(UPSTREAM_PORT):
+        raise SetupError("127.0.0.1:18061 已被占用，无法启动小红书上游服务。")
     _secure_state_files()
     environment = os.environ.copy()
     environment["COOKIES_PATH"] = str(COOKIE_FILE)
     with LOG_FILE.open("ab") as log:
-        process = subprocess.Popen(
-            [str(_binary("server")), "-headless=true", "-port=127.0.0.1:18060"],
-            cwd=STATE_DIR,
-            env=environment,
-            stdin=subprocess.DEVNULL,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
+        server = _spawn(
+            [str(_binary("server")), "-headless=true", f"-port={UPSTREAM_HOST}:{UPSTREAM_PORT}"],
+            environment,
+            log,
         )
-    PID_FILE.write_text(f"{process.pid}\n", encoding="utf-8")
-    deadline = time.monotonic() + args.timeout
-    while time.monotonic() < deadline:
-        if _health():
-            _secure_state_files()
-            return status(args)
-        if process.poll() is not None:
-            tail = ""
-            try:
-                tail = "\n".join(LOG_FILE.read_text(encoding="utf-8", errors="replace").splitlines()[-20:])
-            except OSError:
-                pass
-            raise SetupError(f"xiaohongshu-mcp 启动失败（exit {process.returncode}）：{tail}")
-        time.sleep(0.5)
-    raise SetupError(f"xiaohongshu-mcp 在 {args.timeout} 秒内未就绪；查看 {LOG_FILE}")
+        PID_FILE.write_text(f"{server.pid}\n", encoding="utf-8")
+        if not _wait_until(lambda: _health(UPSTREAM_ENDPOINT), args.timeout, server):
+            tail = _log_tail()
+            if server.poll() is not None:
+                raise SetupError(f"xiaohongshu-mcp 启动失败（exit {server.returncode}）：{tail}")
+            raise SetupError(f"xiaohongshu-mcp 在 {args.timeout} 秒内未就绪；查看 {LOG_FILE}")
+        proxy = _spawn(
+            [
+                sys.executable,
+                str(PROXY_SCRIPT),
+                "--listen",
+                f"{PUBLIC_HOST}:{PUBLIC_PORT}",
+                "--upstream",
+                UPSTREAM_ENDPOINT,
+                "--state",
+                str(RATE_LIMIT_STATE),
+            ],
+            environment,
+            log,
+        )
+    PROXY_PID_FILE.write_text(f"{proxy.pid}\n", encoding="utf-8")
+    if not _wait_until(_proxy_active, args.timeout, proxy):
+        tail = _log_tail()
+        if proxy.poll() is not None:
+            raise SetupError(f"小红书限流代理启动失败（exit {proxy.returncode}）：{tail}")
+        raise SetupError(f"小红书限流代理在 {args.timeout} 秒内未就绪；查看 {LOG_FILE}")
+    _secure_state_files()
+    return status(args)
 
 
-def stop(_: argparse.Namespace) -> dict[str, Any]:
-    pid = _read_pid()
+def _stop_pid(path: Path) -> int | None:
+    try:
+        pid = int(path.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        path.unlink(missing_ok=True)
+        return None
     if not _process_alive(pid):
-        PID_FILE.unlink(missing_ok=True)
-        return {"status": "stopped", "managed_process_found": False}
-    assert pid is not None
+        path.unlink(missing_ok=True)
+        return None
     os.kill(pid, signal.SIGTERM)
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline and _process_alive(pid):
         time.sleep(0.2)
     if _process_alive(pid):
         raise SetupError(f"进程 {pid} 未在 10 秒内停止")
-    PID_FILE.unlink(missing_ok=True)
-    return {"status": "stopped", "managed_process_found": True, "pid": pid}
+    path.unlink(missing_ok=True)
+    return pid
+
+
+def stop(_: argparse.Namespace) -> dict[str, Any]:
+    proxy_pid = _stop_pid(PROXY_PID_FILE)
+    server_pid = _stop_pid(PID_FILE)
+    found = proxy_pid is not None or server_pid is not None
+    return {
+        "status": "stopped",
+        "managed_process_found": found,
+        "pid": server_pid,
+        "proxy_pid": proxy_pid,
+    }
 
 
 def login(_: argparse.Namespace) -> dict[str, Any]:

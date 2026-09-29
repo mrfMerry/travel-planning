@@ -22,12 +22,15 @@ class SetupXhsMcpTest(unittest.TestCase):
             pid_file = root / "service.pid"
             with (
                 patch.object(setup_xhs_mcp, "PID_FILE", pid_file),
+                patch.object(setup_xhs_mcp, "PROXY_PID_FILE", root / "rate-limit.pid"),
+                patch.object(setup_xhs_mcp, "RATE_LIMIT_STATE", root / "rate-limit.json"),
                 patch.object(setup_xhs_mcp, "DATA_ROOT", root),
                 patch.object(setup_xhs_mcp, "STATE_DIR", root),
                 patch.object(setup_xhs_mcp, "COOKIE_FILE", root / "cookies.json"),
                 patch.object(setup_xhs_mcp, "LOG_FILE", root / "service.log"),
                 patch.object(setup_xhs_mcp, "_verify_binary", return_value=True),
                 patch.object(setup_xhs_mcp, "_health", return_value=False),
+                patch.object(setup_xhs_mcp, "_proxy_active", return_value=False),
             ):
                 result = setup_xhs_mcp.status(Namespace())
         self.assertEqual(result["status"], "installed")

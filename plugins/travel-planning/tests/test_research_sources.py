@@ -87,10 +87,10 @@ class ResearchSourcesTest(unittest.TestCase):
         with patch.dict(os.environ, {"AMAP_API_KEY": "secret-value"}, clear=True):
             result = research_sources.capabilities(Namespace())
         self.assertTrue(result["map"]["available"])
-        self.assertEqual(result["map"]["providers"][0]["skill"], "$amap-maps")
+        self.assertEqual(result["map"]["providers"][0]["skill"], "/amap-maps")
         self.assertEqual(
             result["travel_inventory"]["providers"]["variflight_aviation"]["skill"],
-            "$variflight",
+            "/variflight",
         )
         self.assertFalse(result["travel_inventory"]["consent_required_per_query"])
         self.assertNotIn("secret-value", str(result))

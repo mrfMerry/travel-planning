@@ -2,6 +2,6 @@ interface:
   display_name: "旅行规划"
   short_description: "规划多日旅行并生成时间轴式响应式行程网页"
   brand_color: "#FFD92F"
-  default_prompt: "使用 $travel-planning 为我的旅行制定详细计划并生成可打开的行程页面。"
+  default_prompt: "使用 /travel-planning 为我的旅行制定详细计划并生成可打开的行程页面。"
 policy:
   allow_implicit_invocation: true

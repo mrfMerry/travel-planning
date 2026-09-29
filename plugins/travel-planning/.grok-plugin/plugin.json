@@ -2,7 +2,11 @@
   "name": "travel-planning",
   "version": "0.1.0",
   "description": "面向 Grok 的旅行数据源调研与响应式行程页面生成插件",
+  "author": {
+    "name": "Travel Planning contributors"
+  },
   "license": "PolyForm-Noncommercial-1.0.0",
+  "keywords": ["旅行", "行程", "travel", "itinerary"],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json"
 }

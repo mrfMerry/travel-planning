@@ -42,19 +42,19 @@ class PluginLayoutTest(unittest.TestCase):
         )
         self.assertEqual(
             servers["amap-maps"]["args"],
-            ["./scripts/providers/amap_mcp.py"],
+            ["${GROK_PLUGIN_ROOT}/scripts/providers/amap_mcp.py"],
         )
         self.assertEqual(
             servers["variflight-aviation"]["args"],
             [
-                "./scripts/providers/variflight_mcp.py",
+                "${GROK_PLUGIN_ROOT}/scripts/providers/variflight_mcp.py",
                 "aviation",
             ],
         )
         self.assertEqual(
             servers["variflight-tripmatch"]["args"],
             [
-                "./scripts/providers/variflight_mcp.py",
+                "${GROK_PLUGIN_ROOT}/scripts/providers/variflight_mcp.py",
                 "tripmatch",
             ],
         )
@@ -111,6 +111,19 @@ class PluginLayoutTest(unittest.TestCase):
     def test_legacy_top_level_integration_directories_are_absent(self) -> None:
         self.assertFalse((ROOT / "integrations").exists())
         self.assertFalse((ROOT / "third_party").exists())
+
+    def test_grok_plugin_manifest_replaces_codex_marketplace(self) -> None:
+        catalog = json.loads(
+            (REPOSITORY_ROOT / ".grok-plugin" / "marketplace.json").read_text(encoding="utf-8")
+        )
+        plugin = catalog["plugins"][0]
+        self.assertEqual(plugin["name"], "travel-planning")
+        self.assertEqual(plugin["source"], {"type": "local", "path": "./plugins/travel-planning"})
+        manifest = json.loads((ROOT / ".grok-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["name"], "travel-planning")
+        self.assertEqual(manifest["mcpServers"], "./.mcp.json")
+        self.assertFalse((ROOT / ".codex-plugin").exists())
+        self.assertFalse((REPOSITORY_ROOT / ".agents" / "plugins" / "marketplace.json").exists())
 
 
 if __name__ == "__main__":

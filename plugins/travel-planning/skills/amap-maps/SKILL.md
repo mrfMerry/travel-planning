@@ -1,11 +1,11 @@
 ---
 name: amap-maps
-description: 使用插件已配置的高德地图 MCP 查询中国境内地址坐标、POI、周边地点、路线、距离和城市天气。适用于“高德查地点/导航/路线/经纬度/附近”等只读请求；不用于高德 JSAPI 前端开发或境外地图检索。
+description: 使用插件已配置的高德地图 MCP 查询中国境内地址坐标、POI、周边地点、路线、距离和城市天气。适用于“高德查地点/导航/路线/经纬度/附近”等只读请求，在 Grok 中使用 /amap-maps；不用于高德 JSAPI 前端开发或境外地图检索。
 ---
 
 # 高德地图 MCP
 
-通过插件清单中的 `amap-maps` MCP Server 调用高德 Web Service。直接使用宿主暴露的 MCP 工具，不安装 `mcporter`，也不重复调用社区 Skill 自带的 HTTP 脚本。
+通过插件清单中的 `amap-maps` MCP Server 调用高德 Web Service。在 Grok 中用 `search_tool` 找到工具，再用 `use_tool` 调用；不安装 `mcporter`，也不重复调用社区 Skill 自带的 HTTP 脚本。
 
 ## 工具路由
 
@@ -29,4 +29,4 @@ description: 使用插件已配置的高德地图 MCP 查询中国境内地址�
 - 不输出、记录或传递 `AMAP_MAPS_API_KEY`/`AMAP_API_KEY`。不要批量扫点或高频调用。
 - 工具均用于只读检索和规划，不代表已经导航、叫车、预约或下单。
 
-完整旅行规划中由 `$travel-planning` 负责把地图结果合并到路线、餐厅与事件数据；本 Skill 不自行生成另一份行程。
+完整旅行规划中由 `/travel-planning` 负责把地图结果合并到路线、餐厅与事件数据；本 Skill 不自行生成另一份行程。
